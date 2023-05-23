@@ -1,0 +1,95 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               Int                     @id @default(autoincrement())
+  nick             String
+  name             String
+  publicName       Boolean                 @default(false) @map("public_name")
+  email            String                  @unique
+  publicEmail      Boolean                 @default(false) @map("public_email")
+  hash             String
+  ownedPosts       Post[]                  @relation("owned_posts")
+  registerPosts    UsersPostsRegister[]
+  ownedComments    Comment[]               @relation("owned_comments")
+  registerComments UsersCommentsRegister[]
+  role             Role                    @default(USER)
+  createdAt        DateTime                @default(now()) @map("created_at")
+  updatedAt        DateTime                @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Post {
+  id            Int                  @id @default(autoincrement())
+  title         String
+  published     Boolean              @default(false)
+  author        User                 @relation("owned_posts", fields: [authorId], references: [id])
+  authorId      Int                  @map("author_id")
+  comments      Comment[]
+  likes         Int                  @default(0)
+  dislikes      Int                  @default(0)
+  usersRegister UsersPostsRegister[]
+  createdAt     DateTime             @default(now()) @map("created_at")
+  updatedAt     DateTime             @updatedAt @map("updated_at")
+
+  @@map("posts")
+}
+
+model Comment {
+  id            Int                     @id @default(autoincrement())
+  content       String
+  published     Boolean
+  author        User                    @relation("owned_comments", fields: [authorId], references: [id])
+  authorId      Int                     @map("author_id")
+  post          Post                    @relation(fields: [postId], references: [id])
+  postId        Int                     @map("post_id")
+  likes         Int                     @default(0)
+  dislikes      Int                     @default(0)
+  usersRegister UsersCommentsRegister[]
+  createdAt     DateTime                @default(now()) @map("created_at")
+  updatedAt     DateTime                @updatedAt @map("updated_at")
+
+  @@map("comments")
+}
+
+model UsersPostsRegister {
+  post   Post         @relation(fields: [postId], references: [id])
+  postId Int          @map("post_id")
+  user   User         @relation(fields: [userId], references: [id])
+  userId Int          @map("user_id")
+  type   RegisterType
+
+  @@id([userId, postId])
+  @@map("users_posts_register")
+}
+
+model UsersCommentsRegister {
+  comment   Comment      @relation(fields: [commentId], references: [id])
+  commentId Int          @map("comment_id")
+  user      User         @relation(fields: [userId], references: [id])
+  userId    Int          @map("user_id")
+  type      RegisterType
+
+  @@id([userId, commentId])
+  @@map("users_comments_register")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum RegisterType {
+  LIKE
+  DISLIKE
+}
