@@ -1,4 +1,6 @@
 import express, { Application } from 'express'
+import { serve, setup } from 'swagger-ui-express'
+import { documentation } from './swagger'
 
 class App {
   app: Application
@@ -7,6 +9,7 @@ class App {
     this.app = express()
     this.settings()
     this.middlewares()
+    this.routes()
   }
 
   private settings() {
@@ -16,6 +19,10 @@ class App {
 
   private middlewares() {
     this.app.use(express.json())
+  }
+
+  private routes() {
+    this.app.use('/api-docs', serve, setup(documentation, { explorer: true }))
   }
 
   async listen(): Promise<void> {

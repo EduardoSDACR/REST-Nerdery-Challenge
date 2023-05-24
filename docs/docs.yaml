@@ -1,0 +1,677 @@
+openapi: 3.0.3
+info:
+  title: REST challenge documentation
+  description: "REST challenge documentation"
+  contact:
+    email: eduardorodriguez@ravn.co
+  version: 1.0.0
+servers:
+  - url: /api/v1
+tags:
+  - name: accounts
+  - name: posts
+  - name: comments
+paths:
+  /accounts/login:
+    post:
+      tags:
+        - accounts
+      description: Begin a session
+      requestBody:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginAccount'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+        '401':
+          description: Email or password is incorrect
+  /accounts/logout:
+    post:
+      tags:
+        - accounts
+      description: Close a session
+      responses:
+        '200':
+          description: Successful operation
+        '401':
+          description: User is not authenticated
+      security:
+        - api_key: []
+  /accounts/signup:
+    post:
+      tags:
+        - accounts
+      description: Create an account
+      requestBody:
+        description: 'Create a new account with the request body parameters'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewAccount'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          description: Something bad happen
+  /accounts/{accountId}/posts:
+    get:
+      tags:
+        - accounts
+      description: Show all posts of an account
+      parameters:
+        - name: accountId
+          in: path
+          description: Account id to search the owned posts
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+                example:
+                  - id: 1
+                    title: 'Travelling'
+                    likes: 2
+                    published: false
+                    createdAt: '2023-03-20T09:12:28Z'
+                    updatedAt: '2023-03-20T09:13:42Z'
+                  - id: 2
+                    title: 'Walking'
+                    likes: 4
+                    published: true
+                    createdAt: '2023-03-21T02:01:42Z'
+                    updatedAt: '2023-03-21T02:02:28Z'
+        '400':
+          description: Invalid account id supplied
+        '401':
+          description: User is not authenticated
+        '404':
+          description: Account not found
+      security:
+        - api_key: []
+  /accounts/me/profile:
+    get:
+      tags:
+        - accounts
+      description: Show account profile data
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+        '400':
+          description: Something bad happen
+        '401':
+          description: User is not authenticated
+        '404':
+          description: Account not found
+      security:
+        - api_key: []
+    put:
+      tags:
+        - accounts
+      description: Update account profile data
+      requestBody:
+        description: Update the profile of account authenticated
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfile'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdatedProfile'
+        '400':
+          description: Something bad happen
+        '401':
+          description: User is not authenticated
+        '404':
+          description: Account not found
+      security:
+        - api_key: []
+  /posts:
+    post:
+      tags:
+        - posts
+      description: Create a post
+      requestBody:
+        description: 'Create a new post with the request body parameters'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewPost'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '401':
+          description: User is not authenticated
+        '400':
+          description: Something bad happen
+      security:
+        - api_key: []
+  /posts/{postId}:
+    get:
+      tags:
+        - posts
+      parameters:
+        - name: postId
+          in: path
+          description: id of the post that wants to read
+          required: true
+          schema:
+            type: integer
+            format: int64
+      description: Show all posts
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+              example:
+                - id: 1
+                  title: 'Travelling'
+                  likes: 2
+                  createdAt: '2023-03-20T09:12:28Z'
+                  updatedAt: '2023-03-20T09:13:42Z'
+        '400':
+          description: Invalid post id supplied
+        '404':
+          description: Post not found
+    patch:
+      tags:
+        - posts
+      parameters:
+        - name: postId
+          in: path
+          description: id of the post that wants to update
+          required: true
+          schema:
+            type: integer
+            format: int64
+      description: Update a specific post
+      requestBody:
+        description: Update the post
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Post'
+            example:
+              - title: 'Travelling tomorrow'
+                published: true
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+              example:
+                - id: 1
+                  title: 'Travelling tomorrow'
+                  likes: 2
+                  published: true
+                  createdAt: '2023-03-20T09:12:28Z'
+                  updatedAt: '2023-03-20T09:15:42Z'
+        '400':
+          description: Invalid post id supplied
+        '401':
+          description: User is not authenticated
+        '403':
+          description: This action is only allowed for the owner user
+        '404':
+          description: Post not found
+      security:
+        - api_key: []
+    delete:
+      tags:
+        - posts
+      parameters:
+        - name: postId
+          in: path
+          description: id of the post that wants to delete
+          required: true
+          schema:
+            type: integer
+            format: int64
+      description: Delete a specific post
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid post id supplied
+        '401':
+          description: User is not authenticated
+        '403':
+          description: This action is only allowed for the owner user
+        '404':
+          description: Post not found
+      security:
+        - api_key: []
+  /posts/{postId}/like:
+    patch:
+      tags:
+        - posts
+      parameters:
+        - name: postId
+          in: path
+          description: id of the post that user like
+          required: true
+          schema:
+            type: integer
+            format: int64
+      description: Like a specific post or revert if is already liked
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid post id supplied
+        '401':
+          description: User is not authenticated
+        '403':
+          description: This user already like this post
+        '404':
+          description: Post not found
+      security:
+        - api_key: []
+  /posts/{postId}/dislike:
+    patch:
+      tags:
+        - posts
+      parameters:
+        - name: postId
+          in: path
+          description: id of the post that user doesn't like
+          required: true
+          schema:
+            type: integer
+            format: int64
+      description: Dislike a specific post of revert if is already disliked
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid post id supplied
+        '401':
+          description: User is not authenticated
+        '403':
+          description: This user already dislike this post
+        '404':
+          description: Post not found
+      security:
+        - api_key: [ ]
+  /comments:
+    post:
+      tags:
+        - comments
+      description: Create a comment
+      requestBody:
+        description: 'Create a new comment with the request body parameters'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewComment'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '400':
+          description: Something bad happen
+        '401':
+          description: User is not authenticated
+      security:
+        - api_key: []
+  /comments/{commentId}:
+    get:
+      tags:
+        - comments
+      parameters:
+        - name: commentId
+          in: path
+          description: id of the comment that wants to read
+          required: true
+          schema:
+            type: integer
+            format: int64
+      description: Show a specific comment
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+              example:
+                - id: 3
+                  content: 'Text'
+                  published: true
+                  authorId: 1
+                  postId: 2
+                  createdAt: "2023-05-22T17:45:56.456Z"
+                  updatedAt: "2023-05-22T17:45:56.456Z"
+        '400':
+          description: Invalid comment id supplied
+        '404':
+          description: Comment not found
+    patch:
+      tags:
+        - comments
+      parameters:
+        - name: commentId
+          in: path
+          description: id of the comment that wants to update
+          required: true
+          schema:
+            type: integer
+            format: int64
+      description: Update a specific comment
+      requestBody:
+        description: Update the post
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewComment'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '400':
+          description: Invalid comment id supplied
+        '401':
+          description: User is not authenticated
+        '403':
+          description: This action is only allowed for the owner user
+        '404':
+          description: Comment not found
+      security:
+        - api_key: []
+    delete:
+      tags:
+        - comments
+      parameters:
+        - name: commentId
+          in: path
+          description: comment id of the comment that wants to delete
+          required: true
+          schema:
+            type: integer
+            format: int64
+      description: Delete a specific comment
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Something bad happen
+        '401':
+          description: User is not authenticated
+        '403':
+          description: This action is only allowed for the owner user
+        '404':
+          description: Comment not found
+      security:
+        - api_key: []
+  /comments/{commentId}/like:
+    patch:
+      tags:
+        - comments
+      parameters:
+        - name: commentId
+          in: path
+          description: id of the comment that user like
+          required: true
+          schema:
+            type: integer
+            format: int64
+      description: Like a specific comment or revert if is already liked
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid comment id supplied
+        '401':
+          description: User is not authenticated
+        '403':
+          description: This user already like this comment
+        '404':
+          description: Comment not found
+      security:
+        - api_key: [ ]
+  /comments/{commentId}/dislike:
+    patch:
+      tags:
+        - comments
+      parameters:
+        - name: commentId
+          in: path
+          description: id of the comment that user doesn't like
+          required: true
+          schema:
+            type: integer
+            format: int64
+      description: Dislike a specific comment or revert if is already disliked
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid comment id supplied
+        '401':
+          description: User is not authenticated
+        '403':
+          description: This user already dislike this comment
+        '404':
+          description: Comment not found
+      security:
+        - api_key: [ ]
+
+components:
+  schemas:
+    Post:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        likes:
+          type: integer
+          format: int64
+        published:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    NewPost:
+      type: object
+      properties:
+        title:
+          type: string
+        published:
+          type: boolean
+    Profile:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        nick:
+          type: string
+          example: 'alias'
+        name:
+          type: string
+          example: 'Antonio'
+        email:
+          type: string
+          example: 'antonio@hotmail.com'
+        publicName:
+          type: boolean
+          example: true
+        publicEmail:
+          type: boolean
+          example: false
+    UpdateProfile:
+      type: object
+      properties:
+        nick:
+          type: string
+          example: 'new_alias'
+        name:
+          type: string
+          example: 'Jose'
+        email:
+          type: string
+          example: 'jose@hotmail.com'
+        publicName:
+          type: boolean
+          example: true
+        publicEmail:
+          type: boolean
+          example: true
+    UpdatedProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        nick:
+          type: string
+          example: 'new_alias'
+        name:
+          type: string
+          example: 'Jose'
+        email:
+          type: string
+          example: 'jose@hotmail.com'
+        publicName:
+          type: boolean
+          example: true
+        publicEmail:
+          type: boolean
+          example: true
+    LoginAccount:
+      type: object
+      properties:
+        email:
+          type: string
+          example: 'santiago@hotmail.com'
+        password:
+          type: string
+          example: 'password'
+    NewAccount:
+      type: object
+      properties:
+        nick:
+          type: string
+          example: 'alias'
+        name:
+          type: string
+          example: 'Santiago'
+        email:
+          type: string
+          example: 'santiago@hotmail.com'
+        password:
+          type: string
+          example: 'password'
+        confirmPassword:
+          type: string
+          example: 'password'
+    Account:
+      type: object
+      properties:
+        nick:
+          type: string
+          example: 'alias'
+        name:
+          type: string
+          example: 'Santiago'
+        email:
+          type: string
+          example: 'santiago@hotmail.com'
+        publicName:
+          type: boolean
+          example: false
+        publicEmail:
+          type: boolean
+          example: false
+    Token:
+      type: object
+      properties:
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+    Comment:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        content:
+          type: string
+        published:
+          type: boolean
+        authorId:
+          type: integer
+          format: int64
+        postId:
+          type: integer
+          format: int64
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    NewComment:
+      type: object
+      properties:
+        content:
+          type: string
+        published:
+          type: boolean
+  securitySchemes:
+    api_key:
+      type: 'apiKey'
+      name: 'authorization'
+      in: 'header'
+      description: 'Bearer <YOUR_TOKEN>'
