@@ -1,6 +1,9 @@
 import express, { Application } from 'express'
 import { serve, setup } from 'swagger-ui-express'
+import './middlewares/passport'
+import passport from 'passport'
 import { documentation } from './swagger'
+import { errorHandler } from './middlewares/error-handler'
 
 class App {
   app: Application
@@ -8,8 +11,8 @@ class App {
   constructor() {
     this.app = express()
     this.settings()
-    this.middlewares()
     this.routes()
+    this.middlewares()
   }
 
   private settings() {
@@ -18,7 +21,9 @@ class App {
   }
 
   private middlewares() {
+    this.app.use(passport.initialize())
     this.app.use(express.json())
+    this.app.use(errorHandler)
   }
 
   private routes() {
