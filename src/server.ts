@@ -3,6 +3,7 @@ import { serve, setup } from 'swagger-ui-express'
 import './middlewares/passport'
 import passport from 'passport'
 import { documentation } from './swagger'
+import { router } from './router'
 import { errorHandler } from './middlewares/error-handler'
 
 class App {
@@ -11,8 +12,8 @@ class App {
   constructor() {
     this.app = express()
     this.settings()
-    this.routes()
     this.middlewares()
+    this.routes()
   }
 
   private settings() {
@@ -23,11 +24,13 @@ class App {
   private middlewares() {
     this.app.use(passport.initialize())
     this.app.use(express.json())
-    this.app.use(errorHandler)
+    this.app.use(express.urlencoded({ extended: true }))
   }
 
   private routes() {
     this.app.use('/api-docs', serve, setup(documentation, { explorer: true }))
+    this.app.use('/', router(this.app))
+    this.app.use(errorHandler)
   }
 
   async listen(): Promise<void> {
