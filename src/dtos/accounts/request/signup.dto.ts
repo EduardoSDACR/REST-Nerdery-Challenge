@@ -1,7 +1,13 @@
 import { IsEmail, IsNotEmpty, IsString } from 'class-validator'
 import { BaseDto } from '../../base.dto'
 
-export class LoginDto extends BaseDto {
+export class SignupDto extends BaseDto {
+  @IsString()
+  readonly nick: string
+
+  @IsString()
+  readonly name: string
+
   @IsEmail()
   readonly email: string
 
