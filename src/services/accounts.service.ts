@@ -1,11 +1,12 @@
 import { sign } from 'jsonwebtoken'
 import { Prisma, Token } from '@prisma/client'
-import { NotFound, Unauthorized } from 'http-errors'
-import { compareSync } from 'bcryptjs'
+import { NotFound, Unauthorized, UnprocessableEntity } from 'http-errors'
+import { compareSync, hashSync } from 'bcryptjs'
 import { prisma } from '../prisma'
 import { PrismaErrorEnum } from '../utils/enums'
 import { LoginDto } from '../dtos/accounts/request/login.dto'
 import { TokenDto } from '../dtos/accounts/response/token.dto'
+import { SignupDto } from '../dtos/accounts/request/signup.dto'
 
 export class AccountsService {
   static async login(input: LoginDto): Promise<TokenDto> {
@@ -15,11 +16,37 @@ export class AccountsService {
       },
     })
 
-    const isValid = compareSync(input.password, user.hash)
-
-    if (!isValid) {
-      throw new Unauthorized('Invalid credentials')
+    if (!user) {
+      throw new Unauthorized('Credentials are wrong')
     }
+
+    const passwordIsValid = compareSync(input.password, user.hash)
+
+    if (!passwordIsValid) {
+      throw new Unauthorized('Credentials are wrong')
+    }
+
+    const token = await this.createToken(user.id)
+
+    return this.generateAccessToken(token.jti)
+  }
+
+  static async signup({ password, ...input }: SignupDto) {
+    const userFound = await prisma.user.findUnique({
+      where: { email: input.email },
+      select: { id: true },
+    })
+
+    if (userFound) {
+      throw new UnprocessableEntity('The email is already taken')
+    }
+
+    const user = await prisma.user.create({
+      data: {
+        ...input,
+        hash: hashSync(password, 10),
+      },
+    })
 
     const token = await this.createToken(user.id)
 
