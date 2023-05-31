@@ -21,3 +21,11 @@ export async function signup(req: Request, res: Response): Promise<void> {
 
   res.status(201).json(result)
 }
+
+export async function logout(req: Request, res: Response): Promise<void> {
+  const accessToken = req.headers.authorization?.replace('Bearer ', '')
+
+  await AccountsService.logout(accessToken)
+
+  res.status(204).send()
+}

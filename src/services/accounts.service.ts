@@ -1,4 +1,4 @@
-import { sign } from 'jsonwebtoken'
+import { sign, verify } from 'jsonwebtoken'
 import { Prisma, Token } from '@prisma/client'
 import { NotFound, Unauthorized, UnprocessableEntity } from 'http-errors'
 import { compareSync, hashSync } from 'bcryptjs'
@@ -51,6 +51,33 @@ export class AccountsService {
     const token = await this.createToken(user.id)
 
     return this.generateAccessToken(token.jti)
+  }
+
+  static async logout(jwt?: string): Promise<void> {
+    if (!jwt) {
+      throw new Unauthorized('Authentication not provided')
+    }
+
+    try {
+      const { sub } = verify(jwt, process.env.JWT_SECRET_KEY as string)
+
+      await prisma.token.delete({
+        where: {
+          jti: sub as string,
+        },
+      })
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        switch (error.code) {
+          case PrismaErrorEnum.NOT_FOUND:
+            throw new NotFound('Session not found')
+          default:
+            throw error
+        }
+      }
+
+      throw new Unauthorized('Invalid authentication')
+    }
   }
 
   static async createToken(id: number): Promise<Token> {
