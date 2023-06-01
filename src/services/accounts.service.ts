@@ -9,6 +9,7 @@ import { TokenDto } from '../dtos/accounts/response/token.dto'
 import { SignupDto } from '../dtos/accounts/request/signup.dto'
 import { PostDto } from '../dtos/posts/response/post.dto'
 import { plainToInstance } from 'class-transformer'
+import { ProfileDto } from '../dtos/accounts/response/profile.dto'
 
 export class AccountsService {
   static async login(input: LoginDto): Promise<TokenDto> {
@@ -138,5 +139,19 @@ export class AccountsService {
     })
 
     return plainToInstance(PostDto, posts)
+  }
+
+  static async profile(accountId: number): Promise<ProfileDto> {
+    const user = await prisma.user.findUnique({
+      where: {
+        id: accountId,
+      },
+    })
+
+    if (!user) {
+      throw new NotFound('User not found')
+    }
+
+    return plainToInstance(ProfileDto, user)
   }
 }

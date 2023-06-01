@@ -16,7 +16,7 @@ passport.use(
         },
         select: {
           user: {
-            select: { id: true, email: true },
+            select: { id: true, email: true, role: true },
           },
         },
       })

@@ -1,8 +1,10 @@
 import { Request, Response } from 'express'
 import { plainToInstance } from 'class-transformer'
+import { User } from '@prisma/client'
 import { AccountsService } from '../services/accounts.service'
 import { LoginDto } from '../dtos/accounts/request/login.dto'
 import { SignupDto } from '../dtos/accounts/request/signup.dto'
+import { Authenticated } from '../utils/types'
 
 export async function login(req: Request, res: Response): Promise<void> {
   const dto = plainToInstance(LoginDto, req.body)
@@ -37,5 +39,12 @@ export async function findAccountPosts(
   const result = await AccountsService.findAccountPosts(
     parseInt(req.params.accountId),
   )
+  res.status(200).json(result)
+}
+
+export async function profile(req: Request, res: Response): Promise<void> {
+  const user = req.user as Authenticated
+  const result = await AccountsService.profile(user.id)
+
   res.status(200).json(result)
 }
