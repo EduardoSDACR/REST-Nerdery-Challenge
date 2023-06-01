@@ -29,3 +29,13 @@ export async function logout(req: Request, res: Response): Promise<void> {
 
   res.status(204).send()
 }
+
+export async function findAccountPosts(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const result = await AccountsService.findAccountPosts(
+    parseInt(req.params.accountId),
+  )
+  res.status(200).json(result)
+}
