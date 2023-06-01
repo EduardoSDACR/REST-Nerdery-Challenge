@@ -1,20 +1,23 @@
 import faker from 'faker'
 import { plainToInstance } from 'class-transformer'
-import { Unauthorized, UnprocessableEntity } from 'http-errors'
+import { NotFound, Unauthorized, UnprocessableEntity } from 'http-errors'
 import jwt from 'jsonwebtoken'
 import { SignupDto } from '../dtos/accounts/request/signup.dto'
 import { clearDatabase, prisma } from '../prisma'
 import { UserFactory } from '../utils/factories/user.factory'
 import { TokenFactory } from '../utils/factories/token.factory'
 import { AccountsService } from './accounts.service'
+import { PostFactory } from '../utils/factories/post.factory'
 
 describe('AccountsService', () => {
   let userFactory: UserFactory
   let tokenFactory: TokenFactory
+  let postFactory: PostFactory
 
   beforeAll(() => {
     userFactory = new UserFactory(prisma)
     tokenFactory = new TokenFactory(prisma)
+    postFactory = new PostFactory(prisma)
   })
 
   beforeEach(() => {
@@ -88,7 +91,7 @@ describe('AccountsService', () => {
 
       const result = AccountsService.logout(faker.lorem.word())
 
-      expect(result).rejects.toThrowError('Session not found')
+      expect(result).rejects.toThrowError(new NotFound('Session not found'))
     })
 
     test('should delete the session token of user', async () => {
@@ -102,6 +105,29 @@ describe('AccountsService', () => {
       const result = await AccountsService.logout(faker.lorem.word())
 
       expect(result).toBeUndefined()
+    })
+  })
+
+  describe('findAccountPosts', () => {
+    test('should throw a not found error when the account do not exist', async () => {
+      const result = async () => {
+        return await AccountsService.findAccountPosts(faker.datatype.number())
+      }
+
+      expect(result).rejects.toThrowError(new NotFound('Account not found'))
+    })
+
+    test('should return all published posts of an specific account', async () => {
+      const user = await userFactory.make()
+      const posts = await postFactory.makeMany(5, {
+        title: faker.lorem.sentence(),
+        author: { connect: { id: user.id } },
+      })
+      const publishedPosts = posts.filter((post) => post.published)
+
+      const result = await AccountsService.findAccountPosts(user.id)
+
+      expect(result.length).toBe(publishedPosts.length)
     })
   })
 })
