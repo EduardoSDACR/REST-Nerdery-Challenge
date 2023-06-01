@@ -7,6 +7,8 @@ import { PrismaErrorEnum } from '../utils/enums'
 import { LoginDto } from '../dtos/accounts/request/login.dto'
 import { TokenDto } from '../dtos/accounts/response/token.dto'
 import { SignupDto } from '../dtos/accounts/request/signup.dto'
+import { PostDto } from '../dtos/posts/response/post.dto'
+import { plainToInstance } from 'class-transformer'
 
 export class AccountsService {
   static async login(input: LoginDto): Promise<TokenDto> {
@@ -31,7 +33,7 @@ export class AccountsService {
     return this.generateAccessToken(token.jti)
   }
 
-  static async signup({ password, ...input }: SignupDto) {
+  static async signup({ password, ...input }: SignupDto): Promise<TokenDto> {
     const userFound = await prisma.user.findUnique({
       where: { email: input.email },
       select: { id: true },
@@ -115,5 +117,26 @@ export class AccountsService {
       accessToken,
       exp: expirationDate,
     }
+  }
+
+  static async findAccountPosts(accountId: number): Promise<PostDto[]> {
+    const user = await prisma.user.findUnique({
+      where: {
+        id: accountId,
+      },
+    })
+
+    if (!user) {
+      throw new NotFound('Account not found')
+    }
+
+    const posts = await prisma.post.findMany({
+      where: {
+        authorId: accountId,
+        published: true,
+      },
+    })
+
+    return plainToInstance(PostDto, posts)
   }
 }
