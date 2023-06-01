@@ -8,6 +8,7 @@ import { UserFactory } from '../utils/factories/user.factory'
 import { TokenFactory } from '../utils/factories/token.factory'
 import { PostFactory } from '../utils/factories/post.factory'
 import { ProfileDto } from '../dtos/accounts/response/profile.dto'
+import { UpdateProfileDto } from '../dtos/accounts/request/update-profile.dto'
 import { AccountsService } from './accounts.service'
 
 describe('AccountsService', () => {
@@ -138,6 +139,46 @@ describe('AccountsService', () => {
       const result = await AccountsService.profile(user.id)
 
       expect(result).toMatchObject(plainToInstance(ProfileDto, user))
+    })
+  })
+
+  describe('updateProfile', () => {
+    test('should throw error when user not exist', async () => {
+      const data = plainToInstance(UpdateProfileDto, {})
+
+      await expect(
+        AccountsService.updateProfile(faker.datatype.number(), data),
+      ).rejects.toThrowError(new NotFound('User not found'))
+    })
+
+    test('should throw an error when user tries to update its email with an existing one', async () => {
+      const existingEmail = faker.internet.email()
+      const [user] = await Promise.all([
+        userFactory.make(),
+        userFactory.make({ email: existingEmail }),
+      ])
+
+      const data = plainToInstance(UpdateProfileDto, { email: existingEmail })
+
+      await expect(
+        AccountsService.updateProfile(user.id, data),
+      ).rejects.toThrowError(new UnprocessableEntity('Email is already taken'))
+    })
+
+    test('should update user data', async () => {
+      const user = await userFactory.make()
+      const nick = 'new alias'
+      const name = 'new name'
+      const updateData = plainToInstance(UpdateProfileDto, {
+        nick,
+        name,
+      })
+
+      const result = await AccountsService.updateProfile(user.id, updateData)
+
+      expect(result).toHaveProperty('nick', nick)
+      expect(result).toHaveProperty('name', name)
+      expect(result).toHaveProperty('publicName', user.publicName)
     })
   })
 })

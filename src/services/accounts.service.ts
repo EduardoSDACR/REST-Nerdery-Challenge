@@ -2,14 +2,15 @@ import { sign, verify } from 'jsonwebtoken'
 import { Prisma, Token } from '@prisma/client'
 import { NotFound, Unauthorized, UnprocessableEntity } from 'http-errors'
 import { compareSync, hashSync } from 'bcryptjs'
+import { plainToInstance } from 'class-transformer'
 import { prisma } from '../prisma'
 import { PrismaErrorEnum } from '../utils/enums'
 import { LoginDto } from '../dtos/accounts/request/login.dto'
 import { TokenDto } from '../dtos/accounts/response/token.dto'
 import { SignupDto } from '../dtos/accounts/request/signup.dto'
 import { PostDto } from '../dtos/posts/response/post.dto'
-import { plainToInstance } from 'class-transformer'
 import { ProfileDto } from '../dtos/accounts/response/profile.dto'
+import { UpdateProfileDto } from '../dtos/accounts/request/update-profile.dto'
 
 export class AccountsService {
   static async login(input: LoginDto): Promise<TokenDto> {
@@ -153,5 +154,36 @@ export class AccountsService {
     }
 
     return plainToInstance(ProfileDto, user)
+  }
+
+  static async updateProfile(
+    accountId: number,
+    input: UpdateProfileDto,
+  ): Promise<ProfileDto> {
+    try {
+      const updatedUser = await prisma.user.update({
+        where: {
+          id: accountId,
+        },
+        data: {
+          ...input,
+        },
+      })
+
+      return plainToInstance(ProfileDto, updatedUser)
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        switch (error.code) {
+          case PrismaErrorEnum.NOT_FOUND:
+            throw new NotFound('User not found')
+          case PrismaErrorEnum.DUPLICATED:
+            throw new UnprocessableEntity('Email is already taken')
+          default:
+            throw error
+        }
+      }
+
+      throw error
+    }
   }
 }

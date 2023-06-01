@@ -7,6 +7,7 @@ import {
   logout,
   profile,
   signup,
+  updateProfile,
 } from '../controllers/accounts.controller'
 
 const router = express.Router()
@@ -20,6 +21,7 @@ export function accountsRoutes(): Router {
     .route('/me/profile')
     .all(passport.authenticate('jwt', { session: false }))
     .get(asyncHandler(profile))
+    .put(asyncHandler(updateProfile))
 
   return router
 }
