@@ -6,8 +6,9 @@ import { SignupDto } from '../dtos/accounts/request/signup.dto'
 import { clearDatabase, prisma } from '../prisma'
 import { UserFactory } from '../utils/factories/user.factory'
 import { TokenFactory } from '../utils/factories/token.factory'
-import { AccountsService } from './accounts.service'
 import { PostFactory } from '../utils/factories/post.factory'
+import { ProfileDto } from '../dtos/accounts/response/profile.dto'
+import { AccountsService } from './accounts.service'
 
 describe('AccountsService', () => {
   let userFactory: UserFactory
@@ -68,30 +69,26 @@ describe('AccountsService', () => {
   })
 
   describe('logout', () => {
-    test('should throw an error when jwt is undefined', () => {
-      const result = AccountsService.logout(undefined)
-
-      expect(result).rejects.toThrowError(
+    test('should throw an error when jwt is undefined', async () => {
+      await expect(AccountsService.logout(undefined)).rejects.toThrowError(
         new Unauthorized('Authentication not provided'),
       )
     })
 
-    test('should throw an error when jwt is invalid', () => {
-      const result = AccountsService.logout(faker.lorem.word())
-
-      expect(result).rejects.toThrowError(
-        new Unauthorized('Invalid authentication'),
-      )
+    test('should throw an error when jwt is invalid', async () => {
+      await expect(
+        AccountsService.logout(faker.lorem.word()),
+      ).rejects.toThrowError(new Unauthorized('Invalid authentication'))
     })
 
-    test('should throw an error when prisma cannot find the token', () => {
+    test('should throw an error when prisma cannot find the token', async () => {
       jest
         .spyOn(jwt, 'verify')
         .mockImplementation(jest.fn(() => ({ sub: faker.lorem.word() })))
 
-      const result = AccountsService.logout(faker.lorem.word())
-
-      expect(result).rejects.toThrowError(new NotFound('Session not found'))
+      await expect(
+        AccountsService.logout(faker.lorem.word()),
+      ).rejects.toThrowError(new NotFound('Session not found'))
     })
 
     test('should delete the session token of user', async () => {
@@ -110,11 +107,9 @@ describe('AccountsService', () => {
 
   describe('findAccountPosts', () => {
     test('should throw a not found error when the account do not exist', async () => {
-      const result = async () => {
-        return await AccountsService.findAccountPosts(faker.datatype.number())
-      }
-
-      expect(result).rejects.toThrowError(new NotFound('Account not found'))
+      await expect(
+        AccountsService.findAccountPosts(faker.datatype.number()),
+      ).rejects.toThrowError(new NotFound('Account not found'))
     })
 
     test('should return all published posts of an specific account', async () => {
@@ -128,6 +123,21 @@ describe('AccountsService', () => {
       const result = await AccountsService.findAccountPosts(user.id)
 
       expect(result.length).toBe(publishedPosts.length)
+    })
+  })
+
+  describe('profile', () => {
+    test('should throw error when user not exist', async () => {
+      await expect(
+        AccountsService.profile(faker.datatype.number()),
+      ).rejects.toThrowError(new NotFound('User not found'))
+    })
+
+    test('should return the user profile', async () => {
+      const user = await userFactory.make()
+      const result = await AccountsService.profile(user.id)
+
+      expect(result).toMatchObject(plainToInstance(ProfileDto, user))
     })
   })
 })
