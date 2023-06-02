@@ -79,4 +79,26 @@ export class PostsService {
 
     return plainToInstance(PostDto, updatedPost)
   }
+
+  static async delete(postId: number, accountId: number): Promise<void> {
+    const post = await prisma.post.findUnique({
+      where: {
+        id: postId,
+      },
+    })
+
+    if (!post) {
+      throw new NotFound('Post not found')
+    }
+
+    if (post.authorId !== accountId) {
+      throw new Unauthorized('This account does not own this post')
+    }
+
+    await prisma.post.delete({
+      where: {
+        id: postId,
+      },
+    })
+  }
 }

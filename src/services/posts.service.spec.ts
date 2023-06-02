@@ -116,4 +116,38 @@ describe('PostsService', () => {
       expect(result).toHaveProperty('title', title)
     })
   })
+
+  describe('delete', () => {
+    test('should throw an error if post does not exist', async () => {
+      await expect(
+        PostsService.delete(faker.datatype.number(), faker.datatype.number()),
+      ).rejects.toThrowError(new NotFound('Post not found'))
+    })
+
+    test('should throw an error if user is not the owner of post', async () => {
+      const [firstUser, secondUser] = await userFactory.makeMany(2, {})
+      const post = await postFactory.make({
+        title: faker.lorem.sentence(),
+        author: { connect: { id: firstUser.id } },
+      })
+
+      await expect(
+        PostsService.delete(post.id, secondUser.id),
+      ).rejects.toThrowError(
+        new Unauthorized('This account does not own this post'),
+      )
+    })
+
+    test('should delete the post of owner user', async () => {
+      const user = await userFactory.make()
+      const post = await postFactory.make({
+        title: faker.lorem.sentence(),
+        author: { connect: { id: user.id } },
+      })
+
+      const result = await PostsService.delete(post.id, user.id)
+
+      expect(result).toBeUndefined()
+    })
+  })
 })
