@@ -34,3 +34,10 @@ export async function update(req: Request, res: Response): Promise<void> {
 
   res.status(200).json(result)
 }
+
+export async function deletePost(req: Request, res: Response): Promise<void> {
+  const user = req.user as Authenticated
+  await PostsService.delete(parseInt(req.params.postId), user.id)
+
+  res.status(204).send()
+}
