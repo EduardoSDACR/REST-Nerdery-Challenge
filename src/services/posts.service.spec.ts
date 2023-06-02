@@ -4,13 +4,17 @@ import faker from 'faker'
 import { clearDatabase, prisma } from '../prisma'
 import { CreatePostDto } from '../dtos/posts/request/create-post.dto'
 import { UserFactory } from '../utils/factories/user.factory'
+import { PostFactory } from '../utils/factories/post.factory'
+import { PostDto } from '../dtos/posts/response/post.dto'
 import { PostsService } from './posts.service'
 
 describe('PostsService', () => {
   let userFactory: UserFactory
+  let postFactory: PostFactory
 
   beforeAll(() => {
     userFactory = new UserFactory(prisma)
+    postFactory = new PostFactory(prisma)
   })
 
   beforeEach(() => {
@@ -47,6 +51,25 @@ describe('PostsService', () => {
         authorId: user.id,
         ...data,
       })
+    })
+  })
+
+  describe('find', () => {
+    test('should throw an error if post does not exist', async () => {
+      await expect(
+        PostsService.find(faker.datatype.number()),
+      ).rejects.toThrowError(new NotFound('Post not found'))
+    })
+
+    test('should return the post found', async () => {
+      const post = await postFactory.make({
+        title: faker.lorem.sentence(),
+        author: { connect: { id: (await userFactory.make()).id } },
+      })
+
+      const result = await PostsService.find(post.id)
+
+      expect(result).toMatchObject(plainToInstance(PostDto, post))
     })
   })
 })

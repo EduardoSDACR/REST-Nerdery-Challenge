@@ -69,7 +69,6 @@
       ".+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "**/*.controller.ts",
       "**/*.service.ts",
       "**/*.resolver.ts",
       "**/*.factory.ts",

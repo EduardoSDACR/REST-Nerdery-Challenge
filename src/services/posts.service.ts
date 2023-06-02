@@ -33,4 +33,18 @@ export class PostsService {
       throw error
     }
   }
+
+  static async find(postId: number): Promise<PostDto> {
+    const post = await prisma.post.findUnique({
+      where: {
+        id: postId,
+      },
+    })
+
+    if (!post) {
+      throw new NotFound('Post not found')
+    }
+
+    return plainToInstance(PostDto, post)
+  }
 }
