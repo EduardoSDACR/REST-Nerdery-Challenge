@@ -4,6 +4,7 @@ import asyncHandler from 'express-async-handler'
 import {
   create as createPost,
   find as findPost,
+  update as updatePost,
 } from '../controllers/posts.controller'
 
 const router = express.Router()
@@ -11,10 +12,19 @@ const router = express.Router()
 export function postsRoutes(): Router {
   router
     .route('/')
-    .all(passport.authenticate('jwt', { session: false }))
-    .post(asyncHandler(createPost))
-
-  router.route('/:postId(\\d+)').get(asyncHandler(findPost))
+    .post(
+      passport.authenticate('jwt', { session: false }),
+      asyncHandler(createPost),
+    )
+  router
+    .route('/:postId(\\d+)')
+    .get(asyncHandler(findPost))
+    .patch(
+      passport.authenticate('jwt', {
+        session: false,
+      }),
+      asyncHandler(updatePost),
+    )
 
   return router
 }
