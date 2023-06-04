@@ -1,4 +1,4 @@
-import { NotFound, Unauthorized } from 'http-errors'
+import { NotFound, Unauthorized, UnprocessableEntity } from 'http-errors'
 import { plainToInstance } from 'class-transformer'
 import faker from 'faker'
 import { clearDatabase, prisma } from '../prisma'
@@ -148,6 +148,106 @@ describe('PostsService', () => {
       const result = await PostsService.delete(post.id, user.id)
 
       expect(result).toBeUndefined()
+    })
+  })
+
+  describe('register', () => {
+    test('should throw an error when post does not exist', async () => {
+      await expect(
+        PostsService.register(
+          faker.datatype.number(),
+          faker.datatype.number(),
+          'LIKE',
+        ),
+      ).rejects.toThrowError(new NotFound('Post not found'))
+    })
+
+    test('should decrease the likes field of post when user already like/dislike the post', async () => {
+      const user = await userFactory.make()
+      const post = await postFactory.make({
+        title: faker.lorem.sentence(),
+        author: { connect: { id: user.id } },
+        likes: 1,
+        usersRegister: {
+          create: [
+            {
+              type: 'LIKE',
+              user: {
+                connect: {
+                  id: user.id,
+                },
+              },
+            },
+          ],
+        },
+      })
+
+      const result = await PostsService.register(post.id, user.id, 'LIKE')
+
+      expect(result.likes).toBe(post.likes - 1)
+    })
+
+    test('should increase likes/dislikes field of post by one', async () => {
+      const user = await userFactory.make()
+      const post = await postFactory.make({
+        title: faker.lorem.sentence(),
+        author: { connect: { id: user.id } },
+        likes: 0,
+      })
+
+      const result = await PostsService.register(post.id, user.id, 'LIKE')
+
+      expect(result.likes).toBe(post.likes + 1)
+    })
+
+    test('should change user like register to dislike and reverse when user already has a register on post', async () => {
+      const user = await userFactory.make()
+      const post = await postFactory.make({
+        title: faker.lorem.sentence(),
+        author: {
+          connect: {
+            id: user.id,
+          },
+        },
+        likes: 0,
+        dislikes: 1,
+        usersRegister: {
+          create: [
+            {
+              type: 'DISLIKE',
+              user: {
+                connect: {
+                  id: user.id,
+                },
+              },
+            },
+          ],
+        },
+      })
+
+      const result = await PostsService.register(post.id, user.id, 'LIKE')
+
+      expect(result.dislikes).toBe(post.dislikes - 1)
+      expect(result.likes).toBe(post.likes + 1)
+    })
+
+    test('should exist the same amount of like registers as likes/dislikes made to post', async () => {
+      const [firstUser, secondUser] = await userFactory.makeMany(2)
+      const post = await postFactory.make({
+        title: faker.lorem.sentence(),
+        author: { connect: { id: firstUser.id } },
+        likes: 0,
+      })
+      await PostsService.register(post.id, firstUser.id, 'LIKE')
+      await PostsService.register(post.id, secondUser.id, 'DISLIKE')
+
+      const result = await prisma.usersPostsRegister.findMany({
+        where: {
+          postId: post.id,
+        },
+      })
+
+      expect(result.length).toBe(post.likes + 2)
     })
   })
 })
