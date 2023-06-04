@@ -41,3 +41,25 @@ export async function deletePost(req: Request, res: Response): Promise<void> {
 
   res.status(204).send()
 }
+
+export async function likePost(req: Request, res: Response): Promise<void> {
+  const user = req.user as Authenticated
+  const result = await PostsService.register(
+    parseInt(req.params.postId),
+    user.id,
+    'LIKE',
+  )
+
+  res.status(200).json(result)
+}
+
+export async function dislikePost(req: Request, res: Response): Promise<void> {
+  const user = req.user as Authenticated
+  const result = await PostsService.register(
+    parseInt(req.params.postId),
+    user.id,
+    'DISLIKE',
+  )
+
+  res.status(200).json(result)
+}

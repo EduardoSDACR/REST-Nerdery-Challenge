@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "dotenv -e .env -- ts-node-dev --respawn --transpile-only --exit-child --watch src src/server.ts",
     "test": "dotenv -e .env.test -- jest --runInBand --watch",
-    "test:coverage": "jest --collect-coverage"
+    "test:coverage": "dotenv -e .env.test -- jest --collect-coverage --runInBand"
   },
   "keywords": [],
   "author": "",
