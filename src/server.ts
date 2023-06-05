@@ -5,6 +5,7 @@ import passport from 'passport'
 import { documentation } from './swagger'
 import { router } from './router'
 import { errorHandler } from './middlewares/error-handler'
+import { initEvents } from './events'
 
 class App {
   app: Application
@@ -41,6 +42,7 @@ class App {
       this.app.get('port'),
       this.app.get('environment'),
     )
+    initEvents()
   }
 }
 

@@ -2,6 +2,7 @@ import express, { Router } from 'express'
 import asyncHandler from 'express-async-handler'
 import passport from 'passport'
 import {
+  confirmAccount,
   findAccountPosts,
   login,
   logout,
@@ -22,6 +23,7 @@ export function accountsRoutes(): Router {
     .all(passport.authenticate('jwt', { session: false }))
     .get(asyncHandler(profile))
     .put(asyncHandler(updateProfile))
+  router.route('/confirm-account').post(asyncHandler(confirmAccount))
 
   return router
 }
