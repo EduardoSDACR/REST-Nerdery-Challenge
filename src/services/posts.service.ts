@@ -1,11 +1,12 @@
 import { plainToInstance } from 'class-transformer'
-import { NotFound, Unauthorized, UnprocessableEntity } from 'http-errors'
+import { NotFound, Unauthorized } from 'http-errors'
 import { Prisma } from '@prisma/client'
 import { CreatePostDto } from '../dtos/posts/request/create-post.dto'
 import { prisma } from '../prisma'
 import { PrismaErrorEnum } from '../utils/enums'
 import { PostDto } from '../dtos/posts/response/post.dto'
 import { UpdatePostDto } from '../dtos/posts/request/update-post.dto'
+import { PostWithCommentsDto } from '../dtos/posts/response/post-with-comments.dto'
 
 export class PostsService {
   static async create(
@@ -35,10 +36,17 @@ export class PostsService {
     }
   }
 
-  static async find(postId: number): Promise<PostDto> {
+  static async find(postId: number): Promise<PostWithCommentsDto> {
     const post = await prisma.post.findUnique({
       where: {
         id: postId,
+      },
+      include: {
+        comments: {
+          where: {
+            published: true,
+          },
+        },
       },
     })
 
@@ -46,7 +54,7 @@ export class PostsService {
       throw new NotFound('Post not found')
     }
 
-    return plainToInstance(PostDto, post)
+    return plainToInstance(PostWithCommentsDto, post)
   }
 
   static async update(
