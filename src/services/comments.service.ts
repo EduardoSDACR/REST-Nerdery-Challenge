@@ -33,4 +33,18 @@ export class CommentsService {
       throw error
     }
   }
+
+  static async find(commentId: number): Promise<CommentDto> {
+    const comment = await prisma.comment.findUnique({
+      where: {
+        id: commentId,
+      },
+    })
+
+    if (!comment) {
+      throw new NotFound('Comment not found')
+    }
+
+    return plainToInstance(CommentDto, comment)
+  }
 }
