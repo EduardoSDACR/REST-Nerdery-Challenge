@@ -5,8 +5,8 @@ import { clearDatabase, prisma } from '../prisma'
 import { CreatePostDto } from '../dtos/posts/request/create-post.dto'
 import { UserFactory } from '../utils/factories/user.factory'
 import { PostFactory } from '../utils/factories/post.factory'
-import { PostDto } from '../dtos/posts/response/post.dto'
 import { UpdatePostDto } from '../dtos/posts/request/update-post.dto'
+import { PostWithCommentsDto } from '../dtos/posts/response/post-with-comments.dto'
 import { PostsService } from './posts.service'
 
 describe('PostsService', () => {
@@ -62,7 +62,7 @@ describe('PostsService', () => {
       ).rejects.toThrowError(new NotFound('Post not found'))
     })
 
-    test('should return the post found', async () => {
+    test('should return the post found with comments', async () => {
       const post = await postFactory.make({
         title: faker.lorem.sentence(),
         author: { connect: { id: (await userFactory.make()).id } },
@@ -70,7 +70,9 @@ describe('PostsService', () => {
 
       const result = await PostsService.find(post.id)
 
-      expect(result).toMatchObject(plainToInstance(PostDto, post))
+      expect(result).toMatchObject(
+        plainToInstance(PostWithCommentsDto, { comments: [], ...post }),
+      )
     })
   })
 
