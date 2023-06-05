@@ -79,4 +79,26 @@ export class CommentsService {
 
     return plainToInstance(CommentDto, updatedComment)
   }
+
+  static async delete(commentId: number, accountId: number): Promise<void> {
+    const comment = await prisma.comment.findUnique({
+      where: {
+        id: commentId,
+      },
+    })
+
+    if (!comment) {
+      throw new NotFound('Comment not found')
+    }
+
+    if (comment.authorId !== accountId) {
+      throw new Unauthorized('This account does not own this comment')
+    }
+
+    await prisma.comment.delete({
+      where: {
+        id: commentId,
+      },
+    })
+  }
 }

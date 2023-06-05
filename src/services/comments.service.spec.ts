@@ -169,4 +169,67 @@ describe('CommentsService', () => {
       expect(result).toHaveProperty('content', content)
     })
   })
+
+  describe('delete', () => {
+    test('should throw an error if comment does not exist', async () => {
+      await expect(
+        CommentsService.delete(
+          faker.datatype.number(),
+          faker.datatype.number(),
+        ),
+      ).rejects.toThrowError(new NotFound('Comment not found'))
+    })
+
+    test('should throw an error if user is not the owner of comment', async () => {
+      const [firstUser, secondUser] = await userFactory.makeMany(2, {})
+      const post = await postFactory.make({
+        title: faker.lorem.sentence(),
+        author: { connect: { id: firstUser.id } },
+      })
+      const comment = await commentFactory.make({
+        content: faker.lorem.sentence(),
+        post: {
+          connect: {
+            id: post.id,
+          },
+        },
+        author: {
+          connect: {
+            id: secondUser.id,
+          },
+        },
+      })
+
+      await expect(
+        CommentsService.delete(comment.id, firstUser.id),
+      ).rejects.toThrowError(
+        new Unauthorized('This account does not own this comment'),
+      )
+    })
+
+    test('should delete the comment of owner user', async () => {
+      const user = await userFactory.make()
+      const post = await postFactory.make({
+        title: faker.lorem.sentence(),
+        author: { connect: { id: user.id } },
+      })
+      const comment = await commentFactory.make({
+        content: faker.lorem.sentence(),
+        post: {
+          connect: {
+            id: post.id,
+          },
+        },
+        author: {
+          connect: {
+            id: user.id,
+          },
+        },
+      })
+
+      const result = await CommentsService.delete(comment.id, user.id)
+
+      expect(result).toBeUndefined()
+    })
+  })
 })
