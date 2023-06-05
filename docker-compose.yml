@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15.2
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: rest-challenge-db
+    networks:
+      - rest-challenge-network
+  test-db:
+    image: postgres:15.2
+    ports:
+      - 5434:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: rest-challenge-db
+    networks:
+      - rest-challenge-network
+
+networks:
+  rest-challenge-network:
