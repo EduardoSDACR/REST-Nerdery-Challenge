@@ -5,6 +5,7 @@ import {
   create as createComment,
   find as findComment,
   update as updateComment,
+  deleteComment,
 } from '../controllers/comments.controller'
 
 const router = express.Router()
@@ -24,6 +25,12 @@ export function commentsRoutes(): Router {
         session: false,
       }),
       asyncHandler(updateComment),
+    )
+    .delete(
+      passport.authenticate('jwt', {
+        session: false,
+      }),
+      asyncHandler(deleteComment),
     )
 
   return router

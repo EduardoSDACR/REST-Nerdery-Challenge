@@ -34,3 +34,13 @@ export async function update(req: Request, res: Response): Promise<void> {
 
   res.status(200).json(result)
 }
+
+export async function deleteComment(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const user = req.user as Authenticated
+  await CommentsService.delete(parseInt(req.params.commentId), user.id)
+
+  res.status(204).send()
+}
