@@ -101,4 +101,95 @@ export class CommentsService {
       },
     })
   }
+
+  static async register(
+    commentId: number,
+    accountId: number,
+    type: 'LIKE' | 'DISLIKE',
+  ): Promise<CommentDto> {
+    let data: Prisma.CommentUpdateInput = {
+      [type.toLocaleLowerCase() + 's']: {
+        increment: 1,
+      },
+      usersRegister: {
+        create: {
+          type,
+          user: {
+            connect: {
+              id: accountId,
+            },
+          },
+        },
+      },
+    }
+
+    const register = await prisma.usersCommentsRegister.findUnique({
+      where: {
+        userId_commentId: {
+          userId: accountId,
+          commentId: commentId,
+        },
+      },
+    })
+
+    if (register && register.type === type) {
+      data = {
+        [type.toLocaleLowerCase() + 's']: {
+          decrement: 1,
+        },
+        usersRegister: {
+          delete: {
+            userId_commentId: {
+              userId: accountId,
+              commentId: commentId,
+            },
+          },
+        },
+      }
+    } else if (register && register.type !== type) {
+      data = {
+        [type.toLocaleLowerCase() + 's']: {
+          increment: 1,
+        },
+        [type == 'LIKE' ? 'dislikes' : 'likes']: {
+          decrement: 1,
+        },
+        usersRegister: {
+          update: {
+            where: {
+              userId_commentId: {
+                userId: accountId,
+                commentId: commentId,
+              },
+            },
+            data: {
+              type,
+            },
+          },
+        },
+      }
+    }
+
+    try {
+      const comment = await prisma.comment.update({
+        where: {
+          id: commentId,
+        },
+        data,
+      })
+
+      return plainToInstance(CommentDto, comment)
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        switch (error.code) {
+          case PrismaErrorEnum.NOT_FOUND:
+            throw new NotFound('Comment not found')
+          default:
+            throw error
+        }
+      }
+
+      throw error
+    }
+  }
 }

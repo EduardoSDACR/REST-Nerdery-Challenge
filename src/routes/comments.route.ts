@@ -6,6 +6,8 @@ import {
   find as findComment,
   update as updateComment,
   deleteComment,
+  dislikeComment,
+  likeComment,
 } from '../controllers/comments.controller'
 
 const router = express.Router()
@@ -32,6 +34,14 @@ export function commentsRoutes(): Router {
       }),
       asyncHandler(deleteComment),
     )
+  router
+    .route('/:commentId(\\d+)/like')
+    .all(passport.authenticate('jwt', { session: false }))
+    .patch(asyncHandler(likeComment))
+  router
+    .route('/:commentId(\\d+)/dislike')
+    .all(passport.authenticate('jwt', { session: false }))
+    .patch(asyncHandler(dislikeComment))
 
   return router
 }

@@ -44,3 +44,28 @@ export async function deleteComment(
 
   res.status(204).send()
 }
+
+export async function likeComment(req: Request, res: Response): Promise<void> {
+  const user = req.user as Authenticated
+  const result = await CommentsService.register(
+    parseInt(req.params.commentId),
+    user.id,
+    'LIKE',
+  )
+
+  res.status(200).json(result)
+}
+
+export async function dislikeComment(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const user = req.user as Authenticated
+  const result = await CommentsService.register(
+    parseInt(req.params.commentId),
+    user.id,
+    'DISLIKE',
+  )
+
+  res.status(200).json(result)
+}
