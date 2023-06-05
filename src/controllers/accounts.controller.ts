@@ -61,3 +61,12 @@ export async function updateProfile(
 
   res.status(200).json(result)
 }
+
+export async function confirmAccount(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  await AccountsService.confirmAccount(req.query.token as string)
+
+  res.status(204).send()
+}

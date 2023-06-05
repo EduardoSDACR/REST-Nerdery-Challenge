@@ -11,6 +11,8 @@ import { SignupDto } from '../dtos/accounts/request/signup.dto'
 import { PostDto } from '../dtos/posts/response/post.dto'
 import { ProfileDto } from '../dtos/accounts/response/profile.dto'
 import { UpdateProfileDto } from '../dtos/accounts/request/update-profile.dto'
+import { emitter } from '../events'
+import { USER_EMAIL_CONFIRMATION } from '../events/mail.event'
 
 export class AccountsService {
   static async login(input: LoginDto): Promise<TokenDto> {
@@ -53,6 +55,11 @@ export class AccountsService {
     })
 
     const token = await this.createToken(user.id)
+
+    emitter.emit(USER_EMAIL_CONFIRMATION, {
+      email: user.email,
+      userId: user.id,
+    })
 
     return this.generateAccessToken(token.jti)
   }
@@ -184,6 +191,61 @@ export class AccountsService {
       }
 
       throw error
+    }
+  }
+
+  static generateEmailConfirmationToken(userId: number): string {
+    const expirationDate = process.env
+      .JWT_EMAIL_CONFIRMATION_EXPIRATION_TIME as string
+    return sign(
+      {
+        sub: userId,
+      },
+      process.env.JWT_EMAIL_CONFIRMATION_SECRET_KEY as string,
+      { expiresIn: expirationDate },
+    )
+  }
+
+  static async confirmAccount(token: string): Promise<void> {
+    let sub
+
+    try {
+      ;({ sub } = verify(
+        token,
+        process.env.JWT_EMAIL_CONFIRMATION_SECRET_KEY as string,
+      ))
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(error)
+
+      throw new UnprocessableEntity('Invalid Token')
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(sub as string) },
+      select: { id: true, confirmedAt: true },
+    })
+
+    if (!user) {
+      throw new UnprocessableEntity('Invalid Token')
+    }
+
+    if (user.confirmedAt) {
+      throw new UnprocessableEntity('Account already confirmed')
+    }
+
+    try {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          confirmedAt: new Date(),
+        },
+      })
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(error)
+
+      throw new UnprocessableEntity('Invalid Token')
     }
   }
 }
