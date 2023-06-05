@@ -1,12 +1,14 @@
 import { plainToInstance } from 'class-transformer'
 import faker from 'faker'
-import { NotFound } from 'http-errors'
+import { NotFound, Unauthorized } from 'http-errors'
 import { UserFactory } from '../utils/factories/user.factory'
 import { PostFactory } from '../utils/factories/post.factory'
 import { clearDatabase, prisma } from '../prisma'
 import { CommentFactory } from '../utils/factories/comment.factory'
 import { CreateCommentDto } from '../dtos/comments/request/create-comment.dto'
 import { CommentDto } from '../dtos/comments/response/comment.dto'
+import { UpdatePostDto } from '../dtos/posts/request/update-post.dto'
+import { UpdateCommentDto } from '../dtos/comments/request/update-comment.dto'
 import { CommentsService } from './comments.service'
 
 describe('CommentsService', () => {
@@ -96,6 +98,75 @@ describe('CommentsService', () => {
       const result = await CommentsService.find(comment.id)
 
       expect(result).toMatchObject(plainToInstance(CommentDto, comment))
+    })
+  })
+
+  describe('update', () => {
+    test('should throw an error if comment does not exist', async () => {
+      const data = plainToInstance(UpdateCommentDto, {})
+
+      await expect(
+        CommentsService.update(
+          data,
+          faker.datatype.number(),
+          faker.datatype.number(),
+        ),
+      ).rejects.toThrowError(new NotFound('Comment not found'))
+    })
+
+    test('should throw an error if user is not the owner of comment', async () => {
+      const [firstUser, secondUser] = await userFactory.makeMany(2, {})
+      const post = await postFactory.make({
+        title: faker.lorem.sentence(),
+        author: { connect: { id: firstUser.id } },
+      })
+      const comment = await commentFactory.make({
+        content: faker.lorem.sentence(),
+        post: {
+          connect: {
+            id: post.id,
+          },
+        },
+        author: {
+          connect: {
+            id: secondUser.id,
+          },
+        },
+      })
+      const data = plainToInstance(UpdatePostDto, {})
+
+      await expect(
+        CommentsService.update(data, comment.id, firstUser.id),
+      ).rejects.toThrowError(
+        new Unauthorized('This account does not own this comment'),
+      )
+    })
+
+    test('should update the comment of owner user', async () => {
+      const user = await userFactory.make()
+      const post = await postFactory.make({
+        title: faker.lorem.sentence(),
+        author: { connect: { id: user.id } },
+      })
+      const comment = await commentFactory.make({
+        content: faker.lorem.sentence(),
+        post: {
+          connect: {
+            id: post.id,
+          },
+        },
+        author: {
+          connect: {
+            id: user.id,
+          },
+        },
+      })
+      const content = faker.lorem.sentence()
+      const data = plainToInstance(UpdateCommentDto, { content })
+
+      const result = await CommentsService.update(data, comment.id, user.id)
+
+      expect(result).toHaveProperty('content', content)
     })
   })
 })
