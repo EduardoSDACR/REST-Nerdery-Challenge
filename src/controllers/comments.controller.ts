@@ -13,3 +13,9 @@ export async function create(req: Request, res: Response): Promise<void> {
 
   res.status(201).json(result)
 }
+
+export async function find(req: Request, res: Response): Promise<void> {
+  const result = await CommentsService.find(parseInt(req.params.commentId))
+
+  res.status(200).json(result)
+}

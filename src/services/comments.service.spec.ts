@@ -6,6 +6,7 @@ import { PostFactory } from '../utils/factories/post.factory'
 import { clearDatabase, prisma } from '../prisma'
 import { CommentFactory } from '../utils/factories/comment.factory'
 import { CreateCommentDto } from '../dtos/comments/request/create-comment.dto'
+import { CommentDto } from '../dtos/comments/response/comment.dto'
 import { CommentsService } from './comments.service'
 
 describe('CommentsService', () => {
@@ -62,6 +63,39 @@ describe('CommentsService', () => {
         authorId: user.id,
         ...data,
       })
+    })
+  })
+
+  describe('find', () => {
+    test('should throw an error if comment does not exist', async () => {
+      await expect(
+        CommentsService.find(faker.datatype.number()),
+      ).rejects.toThrowError(new NotFound('Comment not found'))
+    })
+
+    test('should return the comment found', async () => {
+      const user = await userFactory.make()
+      const post = await postFactory.make({
+        title: faker.lorem.sentence(),
+        author: { connect: { id: user.id } },
+      })
+      const comment = await commentFactory.make({
+        content: faker.lorem.sentence(),
+        post: {
+          connect: {
+            id: post.id,
+          },
+        },
+        author: {
+          connect: {
+            id: user.id,
+          },
+        },
+      })
+
+      const result = await CommentsService.find(comment.id)
+
+      expect(result).toMatchObject(plainToInstance(CommentDto, comment))
     })
   })
 })
