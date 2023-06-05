@@ -232,4 +232,157 @@ describe('CommentsService', () => {
       expect(result).toBeUndefined()
     })
   })
+
+  describe('register', () => {
+    test('should throw an error when comment does not exist', async () => {
+      await expect(
+        CommentsService.register(
+          faker.datatype.number(),
+          faker.datatype.number(),
+          'LIKE',
+        ),
+      ).rejects.toThrowError(new NotFound('Comment not found'))
+    })
+
+    test('should decrease the likes field of comment when user already like/dislike the comment', async () => {
+      const user = await userFactory.make()
+      const post = await postFactory.make({
+        title: faker.lorem.sentence(),
+        author: { connect: { id: user.id } },
+      })
+      const comment = await commentFactory.make({
+        content: faker.lorem.sentence(),
+        likes: 1,
+        dislikes: 0,
+        post: {
+          connect: {
+            id: post.id,
+          },
+        },
+        author: {
+          connect: {
+            id: user.id,
+          },
+        },
+        usersRegister: {
+          create: [
+            {
+              type: 'LIKE',
+              user: {
+                connect: {
+                  id: user.id,
+                },
+              },
+            },
+          ],
+        },
+      })
+
+      const result = await CommentsService.register(comment.id, user.id, 'LIKE')
+
+      expect(result.likes).toBe(comment.likes - 1)
+    })
+
+    test('should increase likes/dislikes field of comment by one', async () => {
+      const user = await userFactory.make()
+      const post = await postFactory.make({
+        title: faker.lorem.sentence(),
+        author: { connect: { id: user.id } },
+      })
+      const comment = await commentFactory.make({
+        content: faker.lorem.sentence(),
+        likes: 0,
+        post: {
+          connect: {
+            id: post.id,
+          },
+        },
+        author: {
+          connect: {
+            id: user.id,
+          },
+        },
+      })
+
+      const result = await CommentsService.register(comment.id, user.id, 'LIKE')
+
+      expect(result.likes).toBe(comment.likes + 1)
+    })
+
+    test('should change user like register to dislike and vice versa when user already has a register on comment', async () => {
+      const user = await userFactory.make()
+      const post = await postFactory.make({
+        title: faker.lorem.sentence(),
+        author: {
+          connect: {
+            id: user.id,
+          },
+        },
+      })
+      const comment = await commentFactory.make({
+        content: faker.lorem.sentence(),
+        likes: 0,
+        dislikes: 1,
+        post: {
+          connect: {
+            id: post.id,
+          },
+        },
+        author: {
+          connect: {
+            id: user.id,
+          },
+        },
+        usersRegister: {
+          create: [
+            {
+              type: 'DISLIKE',
+              user: {
+                connect: {
+                  id: user.id,
+                },
+              },
+            },
+          ],
+        },
+      })
+
+      const result = await CommentsService.register(comment.id, user.id, 'LIKE')
+
+      expect(result.dislikes).toBe(comment.dislikes - 1)
+      expect(result.likes).toBe(comment.likes + 1)
+    })
+
+    test('should exist the same amount of like registers as likes/dislikes made to comment', async () => {
+      const [firstUser, secondUser] = await userFactory.makeMany(2)
+      const post = await postFactory.make({
+        title: faker.lorem.sentence(),
+        author: { connect: { id: firstUser.id } },
+      })
+      const comment = await commentFactory.make({
+        content: faker.lorem.sentence(),
+        likes: 0,
+        post: {
+          connect: {
+            id: post.id,
+          },
+        },
+        author: {
+          connect: {
+            id: firstUser.id,
+          },
+        },
+      })
+      await CommentsService.register(comment.id, firstUser.id, 'LIKE')
+      await CommentsService.register(comment.id, secondUser.id, 'DISLIKE')
+
+      const result = await prisma.usersCommentsRegister.findMany({
+        where: {
+          commentId: comment.id,
+        },
+      })
+
+      expect(result.length).toBe(comment.likes + 2)
+    })
+  })
 })
