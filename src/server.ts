@@ -1,4 +1,4 @@
-import express, { Application } from 'express'
+import express, { Application, Request, Response } from 'express'
 import { serve, setup } from 'swagger-ui-express'
 import './middlewares/passport'
 import passport from 'passport'
@@ -31,6 +31,11 @@ class App {
   private routes() {
     this.app.use('/api-docs', serve, setup(documentation, { explorer: true }))
     this.app.use('/', router(this.app))
+    this.app.get('/api/v1/status', (req: Request, res: Response) => {
+      res.json({
+        time: new Date(),
+      })
+    })
     this.app.use(errorHandler)
   }
 
