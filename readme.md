@@ -39,9 +39,15 @@ EMAIL_PASSWORD=
 JWT_EMAIL_CONFIRMATION_EXPIRATION_TIME=10m
 JWT_EMAIL_CONFIRMATION_SECRET_KEY=secret
 ```
-If you run tests then you need to define a single variable for test database in a .env.example file:
+If you run tests then you just need to define these variables in a .env.example file:
 ```
 DATABASE_URL=postgresql://<user>:<password>@localhost:5432/rest-challenge-db?schema=testing
+
+JWT_SECRET_KEY=secret
+JWT_EXPIRATION_TIME=30m
+
+JWT_EMAIL_CONFIRMATION_EXPIRATION_TIME=10m
+JWT_EMAIL_CONFIRMATION_SECRET_KEY=secret
 ```
 
 
