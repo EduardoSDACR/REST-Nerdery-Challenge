@@ -8,6 +8,7 @@
     "db:up": "docker compose up db -d",
     "db:restart": "npm run db:rm && npm run db:up && sleep 1 && npm run prisma:deploy",
     "prisma:deploy": "prisma migrate deploy",
+    "prisma:test-deploy": "dotenv -e .env.test -- prisma migrate deploy",
     "dev": "dotenv -e .env -- ts-node-dev --respawn --transpile-only --exit-child --watch src src/server.ts",
     "test": "dotenv -e .env.test -- jest --runInBand --watch",
     "test:coverage": "dotenv -e .env.test -- jest --collect-coverage --runInBand"

@@ -33,12 +33,12 @@ paths:
         '401':
           description: Email or password is incorrect
   /accounts/logout:
-    post:
+    delete:
       tags:
         - accounts
       description: Close a session
       responses:
-        '200':
+        '204':
           description: Successful operation
         '401':
           description: User is not authenticated
@@ -61,7 +61,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Account'
+                $ref: '#/components/schemas/Token'
         '400':
           description: Something bad happen
   /accounts/{accountId}/posts:
@@ -153,6 +153,26 @@ paths:
           description: Account not found
       security:
         - api_key: []
+  /accounts/confirm-account:
+    post:
+      tags:
+        - accounts
+      description: Confirm email verification token
+      parameters:
+        - in: query
+          name: token
+          schema:
+            type: string
+          description: Email verification token
+      responses:
+        '204':
+          description: Successful operation
+        '400':
+          description: Something bad happen
+        '401':
+          description: User is not authenticated
+        '404':
+          description: Account not found
   /posts:
     post:
       tags:
@@ -266,7 +286,7 @@ paths:
             format: int64
       description: Delete a specific post
       responses:
-        '200':
+        '204':
           description: Successful operation
         '400':
           description: Invalid post id supplied
@@ -292,7 +312,7 @@ paths:
             format: int64
       description: Like a specific post or revert if is already liked
       responses:
-        '200':
+        '204':
           description: Successful operation
         '400':
           description: Invalid post id supplied
@@ -318,7 +338,7 @@ paths:
             format: int64
       description: Dislike a specific post of revert if is already disliked
       responses:
-        '200':
+        '204':
           description: Successful operation
         '400':
           description: Invalid post id supplied
@@ -435,7 +455,7 @@ paths:
             format: int64
       description: Delete a specific comment
       responses:
-        '200':
+        '204':
           description: Successful operation
         '400':
           description: Something bad happen
@@ -461,7 +481,7 @@ paths:
             format: int64
       description: Like a specific comment or revert if is already liked
       responses:
-        '200':
+        '204':
           description: Successful operation
         '400':
           description: Invalid comment id supplied
@@ -487,7 +507,7 @@ paths:
             format: int64
       description: Dislike a specific comment or revert if is already disliked
       responses:
-        '200':
+        '204':
           description: Successful operation
         '400':
           description: Invalid comment id supplied
@@ -613,9 +633,6 @@ components:
         password:
           type: string
           example: 'password'
-        confirmPassword:
-          type: string
-          example: 'password'
     Account:
       type: object
       properties:
@@ -637,9 +654,12 @@ components:
     Token:
       type: object
       properties:
-        token:
+        accessToken:
           type: string
           example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+        exp:
+          type: string
+          example: 30m
     Comment:
       type: object
       properties:
